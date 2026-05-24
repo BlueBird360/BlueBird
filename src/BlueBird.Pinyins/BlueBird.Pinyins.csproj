@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+		<Nullable>enable</Nullable>
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>..\..\BlueBird.snk</AssemblyOriginatorKeyFile>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<DebugType>embedded</DebugType>
+		<Version>1.0.0</Version>
+		<Authors>BlueBird</Authors>
+		<Copyright>Copyright © 2026 BlueBird</Copyright>
+		<IsPackable>true</IsPackable>
+		<PackageIcon>BlueBird.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageReleaseNotes>Chinese character ↔ Pinyin conversion: GetPinyin, GetInitials, GetChineseText.</PackageReleaseNotes>
+		<PackageDescription>A zero-dependency .NET library for converting between Chinese characters and Pinyin. Supports Chinese-to-Pinyin, Pinyin-to-Chinese, and initial letter extraction. Compatible with .NET 8.0+ and .NET 10.0.</PackageDescription>
+		<PackageTags>pinyin;chinese;hanzi;汉字;拼音;拼音转换;拼音首字母</PackageTags>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<EnablePackageValidation>true</EnablePackageValidation>
+		<RepositoryType>git</RepositoryType>
+		<RepositoryUrl>https://github.com/BlueBird360/BlueBird</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/BlueBird360/BlueBird</PackageProjectUrl>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\..\BlueBird.png" Pack="true" PackagePath="" Visible="false" />
+		<None Include="README.md" Pack="true" PackagePath="" />
+	</ItemGroup>
+
+</Project>

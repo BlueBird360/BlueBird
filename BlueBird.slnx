@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/BlueBird.Pinyins.Tests/BlueBird.Pinyins.Tests.csproj" />
+  <Project Path="src/BlueBird.Pinyins/BlueBird.Pinyins.csproj" />
+</Solution>
