@@ -1,8 +1,8 @@
-﻿namespace BlueBird.Pinyins
+namespace BlueBird.Pinyins
 {
-    internal static class PyHash
+    internal static class PinyinIndex
     {
-        public static readonly short[][] Hashes = new short[][]
+        public static readonly short[][] Buckets = new short[][]
         {
             new short[]{69, 83, 87, 108, 125, 194, 240, 254, 268, 315, 335, 354, 361, 362},
             new short[]{1, 7, 22, 139, 167, 245, 276, 306, 356, 359},

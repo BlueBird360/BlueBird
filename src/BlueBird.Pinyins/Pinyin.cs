@@ -65,12 +65,13 @@ namespace BlueBird.Pinyins
         /// <returns>Pinyin for the character. Returns the character itself if not found in the pinyin data table.</returns>
         public static string GetPinyin(char ch)
         {
-            short hash = GetHashIndex(ch);
-            foreach (short index in PyHash.Hashes[hash])
+            short bucketIndex = GetBucketIndex(ch);
+            foreach (short index in PinyinIndex.Buckets[bucketIndex])
             {
-                int position = PyCode.Codes[index].IndexOf(ch, 7);
-                if (position != -1)
-                    return PyCode.Codes[index].Substring(0, 6).TrimEnd();
+                if (PinyinData.Entries[index].Characters.Contains(ch))
+                {
+                    return PinyinData.Entries[index].Pinyin;
+                }
             }
             return ch.ToString();
         }
@@ -86,21 +87,21 @@ namespace BlueBird.Pinyins
             if (pinyin == null)
                 return null;
 
-            string key = pinyin.Trim().ToLower();
-            foreach (string text in PyCode.Codes)
+            string key = pinyin.Trim().ToLowerInvariant();
+            foreach (var entry in PinyinData.Entries)
             {
-                if (text.StartsWith(key + " ") || text.StartsWith(key + ":"))
-                    return text.Substring(7);
+                if (entry.Pinyin == key)
+                    return entry.Characters;
             }
             return string.Empty;
         }
 
         /// <summary>
-        /// Gets the hash table index for a character.
+        /// Gets the bucket index for a character.
         /// </summary>
-        private static short GetHashIndex(char ch)
+        private static short GetBucketIndex(char ch)
         {
-            return (short)((uint)ch % PyHash.Hashes.Length);
+            return (short)((uint)ch % PinyinIndex.Buckets.Length);
         }
     }
 }

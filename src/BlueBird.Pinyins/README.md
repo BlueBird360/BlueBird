@@ -16,7 +16,7 @@ Pinyin.GetInitials("你好");       // "nh"
 Pinyin.GetInitials("你好", "-");  // "n-h"
 
 // Pinyin to Chinese characters
-Pinyin.GetChineseText("zhong");   // "中忠钟终盅..."
+Pinyin.GetChineseText("zhong");   // "中种重众钟..."
 ```
 
 ## API Reference
@@ -41,22 +41,29 @@ All pinyin data is embedded as C# source code — zero external dependencies. Th
 
 ```
 ┌─────────────────────────────────────────┐
-│           PyCode.Codes (400 entries)    │
+│       PinyinData.Entries (400 entries)  │
 │  ┌───────────────────────────────────┐  │
-│  │ "a     :阿啊吖嗄腌..."            │  │  Fixed format:
-│  │ "ai    :爱埃碍矮挨..."            │  │  [6-char pinyin + 1-char sep + N chars]
-│  │ "zhong :中忠钟终盅..."            │  │
-│  │ "zuo   :作做左座坐..."            │  │  Separator: ":" for short pinyins, space for others
+│  │ Pinyin: "a"                       │  │  PinyinEntry structs:
+│  │ Chars:  "阿啊吖嗄腌..."           │  │
+│  │───────────────────────────────────│  │  Each entry holds a pinyin syllable
+│  │ Pinyin: "ai"                      │  │  and its matching characters
+│  │ Chars:  "爱埃碍矮挨..."           │  │  as separate string fields
+│  │───────────────────────────────────│  │
+│  │ Pinyin: "zhong"                   │  │
+│  │ Chars:  "中种重众钟..."           │  │
+│  │───────────────────────────────────│  │
+│  │ Pinyin: "zuo"                     │  │
+│  │ Chars:  "作做左座坐..."           │  │
 │  └───────────────────────────────────┘  │
 └─────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────┐
-│         PyHash.Hashes (1000 buckets)    │
+│      PinyinIndex.Buckets (1000 buckets)  │
 │  ┌───────────────────────────────────┐  │
-│  │ [0]  → {69, 83, 87, 108, ...}     │  │  Each bucket contains indices into PyCode
-│  │ [1]  → {1, 7, 22, 139,  ...}      │  │
-│  │ ...                               │  │  Hash function: (uint)ch % 1000
-│  │ [999]→ {38, 68, 78, 79, ...}      │  │
+│  │ [0]  → {69, 83, 87, 108, ...}     │  │  Each bucket contains indices
+│  │ [1]  → {1, 7, 22, 139,  ...}      │  │  into PinyinData.Entries
+│  │ ...                               │  │
+│  │ [999]→ {38, 68, 78, 79, ...}      │  │  Hash function: (uint)ch % 1000
 │  └───────────────────────────────────┘  │
 └─────────────────────────────────────────┘
 ```
@@ -69,13 +76,13 @@ Input: '中' (Unicode 20013)
 Hash bucket: 20013 % 1000 = 13
   ↓
 Scan entries in bucket [13]:
-  → Search for '中' in the character portion of each entry
-  → Found → Extract first 6 chars "zhong ", TrimEnd → "zhong"
+  → Check if PinyinData.Entries[index].Characters contains '中'
+  → Found → Return PinyinData.Entries[index].Pinyin ("zhong")
   → Not found → Return '中' as-is
 ```
 
 Key design:
-- **Hash bucketing**: Characters are evenly distributed into 1000 buckets by Unicode codepoint, avoiding full-table scans.
+- **Hash bucketing**: Characters are distributed into 1000 buckets by Unicode codepoint, avoiding full-table scans.
 - **Non-Chinese fallback**: Unmatched characters are returned as-is.
 
 ### Pinyin → Chinese
@@ -83,16 +90,16 @@ Key design:
 ```
 Input: "zhong"
   ↓
-Normalize: Trim() + ToLower()
+Normalize: Trim() + ToLowerInvariant()
   ↓
-Sequential scan of PyCode.Codes (400 entries):
-  → Match condition: StartsWith("zhong ") or StartsWith("zhong:")
-  → Found → Extract character portion after position 7, return
+Sequential scan of PinyinData.Entries (400 entries):
+  → Match condition: entry.Pinyin == "zhong"
+  → Found → Return entry.Characters
   → Not found → Return empty string
 ```
 
 Key design:
-- **Fixed-width pinyin field**: Pinyin is always padded to 6 characters (right-padded with spaces).
+- **Exact match**: Pinyin comparison uses case-insensitive exact equality after normalization.
 
 ---
 
@@ -112,7 +119,7 @@ Pinyin.GetInitials("你好");       // "nh"
 Pinyin.GetInitials("你好", "-");  // "n-h"
 
 // 拼音转汉字
-Pinyin.GetChineseText("zhong");   // "中忠钟终盅..."
+Pinyin.GetChineseText("zhong");   // "中种重众钟..."
 ```
 
 ### API 说明
@@ -137,22 +144,29 @@ Pinyin.GetChineseText("zhong");   // "中忠钟终盅..."
 
 ```
 ┌─────────────────────────────────────────┐
-│           PyCode.Codes (400 条)         │
+│     PinyinData.Entries (400 条)         │
 │  ┌───────────────────────────────────┐  │
-│  │ "a     :阿啊吖嗄腌..."            │  │  每条固定格式：
-│  │ "ai    :爱埃碍矮挨..."            │  │  [6位拼音 + 1位分隔符 + N个汉字]
-│  │ "zhong :中忠钟终盅..."            │  │
-│  │ "zuo   :作做左座坐..."            │  │  分隔符: 为短拼音用":"，其余用空格
+│  │ Pinyin: "a"                       │  │  PinyinEntry 结构体：
+│  │ Chars:  "阿啊吖嗄腌..."           │  │
+│  │───────────────────────────────────│  │  每条包含独立的拼音字符串
+│  │ Pinyin: "ai"                      │  │  和对应的汉字字符串
+│  │ Chars:  "爱埃碍矮挨..."           │  │
+│  │───────────────────────────────────│  │
+│  │ Pinyin: "zhong"                   │  │
+│  │ Chars:  "中种重众钟..."           │  │
+│  │───────────────────────────────────│  │
+│  │ Pinyin: "zuo"                     │  │
+│  │ Chars:  "作做左座坐..."           │  │
 │  └───────────────────────────────────┘  │
 └─────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────┐
-│         PyHash.Hashes (1000 个桶)       │
+│    PinyinIndex.Buckets (1000 个桶)       │
 │  ┌───────────────────────────────────┐  │
-│  │ [0]  → {69, 83, 87, 108, ...}     │  │  每个桶包含指向 PyCode 的索引
-│  │ [1]  → {1, 7, 22, 139,  ...}      │  │
-│  │ ...                               │  │  哈希函数: (uint)ch % 1000
-│  │ [999]→ {38, 68, 78, 79, ...}      │  │
+│  │ [0]  → {69, 83, 87, 108, ...}     │  │  每个桶包含指向 PinyinData.Entries
+│  │ [1]  → {1, 7, 22, 139,  ...}      │  │  的索引
+│  │ ...                               │  │
+│  │ [999]→ {38, 68, 78, 79, ...}      │  │  哈希函数: (uint)ch % 1000
 │  └───────────────────────────────────┘  │
 └─────────────────────────────────────────┘
 ```
@@ -164,14 +178,14 @@ Pinyin.GetChineseText("zhong");   // "中忠钟终盅..."
   ↓
 计算哈希桶: 20013 % 1000 = 13
   ↓
-扫描桶 [13] 中每个 PyCode 索引
-  → 在索引对应条目的汉字部分查找 '中'
-  → 找到 → 提取前6位 "zhong "，TrimEnd → "zhong"
+扫描桶 [13] 中每个索引:
+  → 检查 PinyinData.Entries[index].Characters 是否包含 '中'
+  → 找到 → 返回 PinyinData.Entries[index].Pinyin ("zhong")
   → 未找到 → 遍历完桶后原样返回 '中'
 ```
 
 关键设计：
-- **哈希分桶**：用字符的 Unicode 码点对 1000 取模，将常见汉字均匀分布到 1000 个桶中，避免全表扫描
+- **哈希分桶**：用字符的 Unicode 码点对 1000 取模，将常见汉字分布到 1000 个桶中，避免全表扫描
 - **非汉字回退**：未命中任何条目时，直接返回字符本身（适用于字母、数字、标点等）
 
 #### 拼音转汉字
@@ -179,13 +193,13 @@ Pinyin.GetChineseText("zhong");   // "中忠钟终盅..."
 ```
 输入: "zhong"
   ↓
-标准化: Trim() + ToLower()
+标准化: Trim() + ToLowerInvariant()
   ↓
-顺序扫描 PyCode.Codes (400条):
-  → 匹配条件: StartsWith("zhong ") 或 StartsWith("zhong:")
-  → 找到 → 提取第7位之后的汉字部分，返回
+顺序扫描 PinyinData.Entries (400 条):
+  → 匹配条件: entry.Pinyin == "zhong"
+  → 找到 → 返回 entry.Characters
   → 未找到 → 返回空字符串
 ```
 
 关键设计：
-- **定长分隔符**：拼音字段固定6字符（不足右侧补空格）
+- **精确匹配**：拼音标准化后使用大小写不敏感的精确等值比较。
