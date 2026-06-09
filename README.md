@@ -4,32 +4,74 @@ A collection of practical .NET NuGet packages. Each package is independently pub
 
 ## Packages
 
-### BlueBird.Pinyins
+### BlueBird.Pinyins [![NuGet](https://img.shields.io/nuget/v/BlueBird.Pinyins)](https://www.nuget.org/packages/BlueBird.Pinyins)
 
 Chinese character ↔ Pinyin conversion library. Supports Chinese-to-Pinyin, Pinyin-to-Chinese, and initial letter extraction.
+
+#### Install
+
+```bash
+dotnet add package BlueBird.Pinyins
+```
+
+#### Usage
 
 ```csharp
 Pinyin.GetPinyin("中国");           // "zhongguo"
 Pinyin.GetInitials("你好", "-");    // "n-h"
-Pinyin.GetChineseText("zhong");     // "中忠钟终盅..."
+Pinyin.GetChineseText("zhong");     // "中种重众钟..."
 ```
 
 See [src/BlueBird.Pinyins/README.md](src/BlueBird.Pinyins/README.md) for details.
 
----
+### BlueBird.Json.TypeAlias [![NuGet](https://img.shields.io/nuget/v/BlueBird.Json.TypeAlias)](https://www.nuget.org/packages/BlueBird.Json.TypeAlias)
 
-## 包列表
+Newtonsoft.Json extension that replaces bloated assembly-qualified type names with short, stable aliases in `$type` fields. Makes polymorphic JSON compact and resilient to refactoring.
 
-BlueBird 是一组实用 .NET NuGet 包的集合，每个包独立发布，开箱即用。
+#### Install
 
-### BlueBird.Pinyins
-
-汉字与拼音转换工具库。支持汉字转拼音、拼音转汉字、拼音首字母提取。
-
-```csharp
-Pinyin.GetPinyin("中国");           // "zhongguo"
-Pinyin.GetInitials("你好", "-");    // "n-h"
-Pinyin.GetChineseText("zhong");     // "中忠钟终盅..."
+```bash
+dotnet add package BlueBird.Json.TypeAlias
 ```
 
-详细说明参见 [src/BlueBird.Pinyins/README.md](src/BlueBird.Pinyins/README.md)。
+#### Usage
+
+```csharp
+[JsonTypeAlias("animal")]
+public class Animal
+{
+    public string Name { get; set; } = string.Empty;
+}
+
+[JsonTypeAlias("dog")]
+public class Dog : Animal
+{
+    public string Breed { get; set; } = string.Empty;
+}
+
+var binder = new TypeAliasRegistry()
+    .Register<Animal>()
+    .Register<Dog>()
+    .BuildBinder();
+
+var settings = new JsonSerializerSettings
+{
+    TypeNameHandling = TypeNameHandling.Objects,
+    SerializationBinder = binder,
+};
+
+// Serialize — compact $type alias instead of full assembly-qualified name
+Animal animal = new Dog { Name = "Rex", Breed = "Labrador" };
+string json = JsonConvert.SerializeObject(animal, settings);
+// {"$type":"dog","Name":"Rex","Breed":"Labrador"}
+
+// Deserialize — correct concrete type is restored
+Animal? result = JsonConvert.DeserializeObject<Animal>(json, settings);
+// result is Dog { Name = "Rex", Breed = "Labrador" }
+```
+
+See [src/BlueBird.Json.TypeAlias/README.md](src/BlueBird.Json.TypeAlias/README.md) for details.
+
+## License
+
+[MIT](LICENSE.txt)
