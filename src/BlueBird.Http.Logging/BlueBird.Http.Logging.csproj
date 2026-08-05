@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+        <LangVersion>14.0</LangVersion>
+        <Nullable>enable</Nullable>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>..\..\BlueBird.snk</AssemblyOriginatorKeyFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <DebugType>embedded</DebugType>
+        <Version>1.0.0</Version>
+        <Authors>BlueBird</Authors>
+        <Copyright>Copyright © 2026 BlueBird</Copyright>
+        <IsPackable>true</IsPackable>
+        <PackageIcon>BlueBird.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageReleaseNotes>Initial release.</PackageReleaseNotes>
+        <PackageDescription>Lightweight automatic HTTP request and response logging for HttpClient and IHttpClientFactory through Microsoft.Extensions.Logging, with filtering, redaction, content limits, structured properties, and custom formatting.</PackageDescription>
+        <PackageTags>http;httpclient;http-logging;logging;ihttpclientfactory;delegatinghandler;ilogger;microsoft-extensions-logging;request-logging;response-logging;structured-logging;redaction</PackageTags>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <EnablePackageValidation>true</EnablePackageValidation>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/BlueBird360/BlueBird</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/BlueBird360/BlueBird</PackageProjectUrl>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\BlueBird.png" Pack="true" PackagePath="" Visible="false" />
+        <None Include="README.md" Pack="true" PackagePath="" />
+    </ItemGroup>
+
+</Project>

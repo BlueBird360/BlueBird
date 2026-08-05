@@ -72,6 +72,54 @@ Animal? result = JsonConvert.DeserializeObject<Animal>(json, settings);
 
 See [src/BlueBird.Json.TypeAlias/README.md](src/BlueBird.Json.TypeAlias/README.md) for details.
 
+### BlueBird.Http.Logging [![NuGet](https://img.shields.io/nuget/v/BlueBird.Http.Logging)](https://www.nuget.org/packages/BlueBird.Http.Logging)
+
+Lightweight request and response logging for `HttpClient` pipelines. Integrates with `IHttpClientFactory` and `Microsoft.Extensions.Logging`, with configurable filtering, log levels, redaction, content limits, structured properties, and custom formatting.
+
+#### Install
+
+```bash
+dotnet add package BlueBird.Http.Logging
+```
+
+#### Usage
+
+```csharp
+using BlueBird.Http.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+services.ConfigureHttpClientDefaults(builder =>
+{
+    builder.RemoveAllLoggers();
+
+    builder.AddHttpClientLogging(options =>
+    {
+        options.RequestFieldsSelector = _ =>
+            HttpLogFields.All;
+
+        options.ResponseFieldsSelector = (_, _) =>
+            HttpLogFields.All;
+
+        options.ResponseLevelSelector = (_, response) =>
+            (int)response.StatusCode switch
+            {
+                >= 500 => LogLevel.Error,
+                >= 400 => LogLevel.Warning,
+                _ => LogLevel.Information,
+            };
+    });
+});
+
+services.AddHttpClient("api");
+```
+
+This enables full request and response logging for every client created by `IHttpClientFactory` and removes Microsoft's built-in HTTP logging to avoid duplicate entries. Potentially sensitive URI components and common credential, cookie, API key, and token headers are redacted automatically.
+
+Request and response content may contain sensitive data. In production, capture only the required fields and configure content redactors when bodies are included.
+
+See [src/BlueBird.Http.Logging/README.md](src/BlueBird.Http.Logging/README.md) for details.
+
 ## License
 
 [MIT](LICENSE.txt)
