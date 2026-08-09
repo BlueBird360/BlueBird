@@ -40,7 +40,7 @@ To fix this, you must enable `TypeNameHandling.Objects`, `TypeNameHandling.Auto`
 
 ### Problem 2: Bloated JSON
 
-With `TypeNameHandling.Objects`, Newtonsoft.Json writes the full assembly name and type qualified name into the `$type` field:
+With `TypeNameHandling.Objects`, Newtonsoft.Json writes the full assembly-qualified type name into the `$type` field:
 
 ```json
 {
@@ -54,11 +54,11 @@ The `$type` value can easily be longer than the actual data.
 
 ### Problem 3: Fragile deserialization
 
-The `$type` field pins the serialized JSON to the exact assembly name and type namespace. If you later move `Dog` to a different assembly or rename the namespace, old JSON becomes unreadable.
+The `$type` field pins the serialized JSON to the assembly name and type namespace. If you later move `Dog` to another assembly or rename its namespace, old JSON becomes unreadable.
 
 ### How this library solves all three
 
-`BlueBird.Json.TypeAlias` writes a short, stable alias instead of the full type name. This makes `TypeNameHandling` practical for polymorphic scenarios:
+`BlueBird.Json.TypeAlias` writes a short, stable alias instead of the full type name:
 
 ```json
 {
@@ -68,14 +68,20 @@ The `$type` field pins the serialized JSON to the exact assembly name and type n
 }
 ```
 
-The JSON stays compact, and types can be freely moved across assemblies and namespaces — as long as the alias doesn't change, old JSON still deserializes correctly.
+The JSON stays compact, and types can move between assemblies or namespaces without breaking existing data, as long as their aliases remain unchanged.
 
 ## Quick Start
 
-### 1. Define your types
+### 1. Install the package
+
+```bash
+dotnet add package BlueBird.Json.TypeAlias
+```
+
+### 2. Define your types
 
 ```csharp
-using Newtonsoft.Json;
+using BlueBird.Json.TypeAlias;
 
 [JsonTypeAlias("animal")]
 public class Animal
@@ -96,11 +102,11 @@ public class Cat : Animal
 }
 ```
 
-### 2. Register types and build the binder
+### 3. Register types and build the binder
 
 ```csharp
+using BlueBird.Json.TypeAlias;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 var binder = new TypeAliasRegistry()
     .Register<Animal>()
@@ -115,7 +121,9 @@ var settings = new JsonSerializerSettings
 };
 ```
 
-### 3. Serialize and deserialize
+> **Security:** `TypeNameHandling` is unsafe for untrusted JSON when its binder can resolve arbitrary CLR types. The parameterless `BuildBinder()` uses `DefaultSerializationBinder` for unregistered types. For untrusted input, pass a fallback binder that restricts the types it accepts.
+
+### 4. Serialize and deserialize
 
 ```csharp
 // Polymorphic serialization — concrete type is preserved
@@ -130,9 +138,9 @@ Animal? result = JsonConvert.DeserializeObject<Animal>(json, settings);
 
 ## Polymorphic Serialization in Depth
 
-The key scenario for `BlueBird.Json.TypeAlias` is **preserving concrete types across a class hierarchy** during serialization and deserialization.
+The key scenario for `BlueBird.Json.TypeAlias` is preserving concrete types across a class hierarchy during serialization and deserialization.
 
-As shown above, this library solves the three problems by replacing the full type name with a short, stable alias:
+As shown above, this library replaces the full type name with a short, stable alias:
 
 ```csharp
 var settings = new JsonSerializerSettings
@@ -145,7 +153,7 @@ string json = JsonConvert.SerializeObject(animal, settings);
 // {"$type":"dog","Name":"Rex","Breed":"Labrador"}
 ```
 
-The `$type` field is a short, stable alias. Even if `Dog` is moved to `MyApp.Domain.Models`, the alias `"dog"` still resolves correctly.
+Even if `Dog` moves to another namespace or assembly, the alias `"dog"` continues to resolve correctly.
 
 ### Collections of base types
 
@@ -170,15 +178,15 @@ Animal[]? result = JsonConvert.DeserializeObject<Animal[]>(json, settings);
 
 ### Properties with base type
 
-In real-world scenarios, polymorphism typically appears as class properties declared with a base type:
+Polymorphism commonly appears in properties declared with a base type:
 
 ```csharp
 [JsonTypeAlias("zoo")]
 public class Zoo
 {
     public string Name { get; set; } = string.Empty;
-    public Animal Star { get; set; } = null!;        // runtime type: Dog or Cat
-    public Animal[] Residents { get; set; } = [];    // mixed Dog and Cat instances
+    public Animal Star { get; set; } = null!;
+    public Animal[] Residents { get; set; } = [];
 }
 ```
 
@@ -212,7 +220,7 @@ Zoo? result = JsonConvert.DeserializeObject<Zoo>(json, settings);
 
 ### Abstract base types
 
-When the base type is `abstract`, `TypeNameHandling` is not optional — without it, deserialization throws because the abstract type cannot be instantiated. `BlueBird.Json.TypeAlias` makes this practical:
+When the base type is abstract, type metadata is required because the base type cannot be instantiated:
 
 ```csharp
 [JsonTypeAlias("shape")]
@@ -246,20 +254,24 @@ Shape? result = JsonConvert.DeserializeObject<Shape>(json, settings);
 
 ## Registering Types
 
-Types are registered via `TypeAliasRegistry` during application startup. Call `BuildBinder()` to produce an immutable binder.
+Types are registered via `TypeAliasRegistry` during application startup. Only closed class types can be registered; open generic types such as `Container<>` are rejected, while closed types such as `Container<Order>` can be registered explicitly. Call `BuildBinder()` to produce an immutable binder. The parameterless overload uses Newtonsoft.Json's `DefaultSerializationBinder` for unregistered types. Pass an `ISerializationBinder` to the other overload to customize this fallback behavior.
+
+Closed types constructed from the same generic type definition share the same `type.Name`. For example, `Container<Dog>` and `Container<Cat>` both default to ``Container`1``, so assign each type an explicit, unique alias when registering both.
 
 | Method | Behavior |
 |--------|----------|
 | `Register<T>()` | Register a single type. Alias is resolved from the explicit `alias` parameter, then `[JsonTypeAlias]` attribute, then falls back to `type.Name`. `[JsonDeserializationAlias]` attributes are also auto-registered. |
 | `Register(Type)` | Same as above, accepts a `Type` parameter. |
 | `Register(IEnumerable<Type>)` | Register multiple types at once. For each type, the alias is resolved from `[JsonTypeAlias]` or `type.Name`. |
-| `RegisterAssembly(Assembly)` | Scan and register all types decorated with `[JsonTypeAlias]` or `[JsonDeserializationAlias]`. Types with only `[JsonDeserializationAlias]` have no primary alias registered; serialization falls back to the default Newtonsoft.Json behavior. |
+| `RegisterAssembly(Assembly)` | Scan and register all types decorated with `[JsonTypeAlias]` or `[JsonDeserializationAlias]`. Types with only `[JsonDeserializationAlias]` have no primary alias registered; serialization is delegated to the configured fallback binder. |
 | `RegisterDeserializationAlias<T>(alias)` | Register a deserialization-only alias. Does not require prior `Register()` call. Use this for types you cannot modify (e.g., third-party types). |
 | `RegisterDeserializationAlias<T>(IEnumerable<string>)` | Register multiple deserialization-only aliases at once. |
 | `RegisterDeserializationAlias(Type, alias)` | Register a deserialization-only alias. Accepts a `Type` parameter instead of generic. |
 | `RegisterDeserializationAlias(Type, IEnumerable<string>)` | Register multiple deserialization-only aliases. Accepts a `Type` parameter instead of generic. |
+| `BuildBinder()` | Build an immutable binder that uses `DefaultSerializationBinder` for unregistered types. |
+| `BuildBinder(ISerializationBinder)` | Build an immutable binder that delegates unregistered types to the specified fallback binder. |
 
-All methods return `this` to support fluent chaining:
+All registration methods return `this` to support fluent chaining. `BuildBinder()` terminates the chain and returns the immutable binder:
 
 ```csharp
 var binder = new TypeAliasRegistry()
@@ -278,6 +290,34 @@ The registry resolves the alias in this order:
 1. The explicit `alias` parameter passed to `Register(type, alias)`, if provided.
 2. The value of `[JsonTypeAlias("...")]` on the type.
 3. The type's simple name (`type.Name`).
+
+An alias must contain at least one non-whitespace character and cannot contain a comma, because Newtonsoft.Json uses commas to separate type and assembly names. Other whitespace, including leading and trailing whitespace, is preserved and matched exactly.
+
+## Custom Fallback Binder
+
+Registered aliases always take precedence. When a type or type name is not registered, `TypeAliasSerializationBinder` delegates to its fallback binder. The parameterless `BuildBinder()` method preserves the default Newtonsoft.Json behavior:
+
+```csharp
+var binder = new TypeAliasRegistry()
+    .Register<Animal>()
+    .Register<Dog>()
+    .BuildBinder(); // Uses DefaultSerializationBinder as the fallback
+```
+
+Pass a custom `ISerializationBinder` when unregistered types require application-specific handling:
+
+```csharp
+using Newtonsoft.Json.Serialization;
+
+ISerializationBinder fallbackBinder = new LegacySerializationBinder();
+
+var binder = new TypeAliasRegistry()
+    .Register<Animal>()
+    .Register<Dog>()
+    .BuildBinder(fallbackBinder);
+```
+
+The fallback binder is used in both directions: `BindToName` for serialization and `BindToType` for deserialization. It must not be `null`. See the security guidance in Quick Start before deserializing untrusted JSON.
 
 ## Alias Migration and Backward Compatibility
 
@@ -344,7 +384,7 @@ The library has four main components:
 - **`JsonTypeAliasAttribute`** — defines the primary alias for a type (used for both serialization and deserialization).
 - **`JsonDeserializationAliasAttribute`** — defines additional aliases for deserialization only (used for backward compatibility).
 - **`TypeAliasRegistry`** — mutable registry used during startup to collect type-alias mappings. Automatically reads both attributes during `Register()` and `RegisterAssembly()`. Call `BuildBinder()` when registration is complete.
-- **`TypeAliasSerializationBinder`** — immutable binder returned by `BuildBinder()`. Uses `FrozenDictionary` internally for lock-free, high-performance lookups. Thread-safe for concurrent reads.
+- **`TypeAliasSerializationBinder`** — binder with immutable type-alias mappings returned by `BuildBinder()`. Uses `FrozenDictionary` internally for lock-free, high-performance alias lookups and delegates unregistered types to a fallback binder.
 
 This design ensures that type-alias mappings are configured once at startup and cannot be accidentally modified at runtime.
 
@@ -375,11 +415,11 @@ var settings = new JsonSerializerSettings
 };
 ```
 
-Since the binder is immutable, it is inherently thread-safe — no locks needed.
+Since the alias mappings are immutable, the binder can be shared across threads when its fallback binder is also thread-safe.
 
 ## Thread Safety
 
-`TypeAliasSerializationBinder` is immutable and thread-safe. Once built via `TypeAliasRegistry.BuildBinder()`, it can be shared across threads without any synchronization.
+The type-alias mappings in `TypeAliasSerializationBinder` are immutable. When the fallback binder is thread-safe, the binder can be shared across threads without any synchronization. The default `DefaultSerializationBinder` supports concurrent use; callers that supply a custom fallback binder are responsible for ensuring that it is thread-safe.
 
 `TypeAliasRegistry` is **not** thread-safe. Register all types from a single thread during startup, then call `BuildBinder()`.
 

@@ -1,5 +1,5 @@
+using BlueBird.Json.TypeAlias;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace BlueBird.Json.TypeAlias.Tests;
 

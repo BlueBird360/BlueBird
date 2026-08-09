@@ -1,8 +1,7 @@
 using System;
 using System.Reflection;
-using Newtonsoft.Json.Serialization;
 
-namespace Newtonsoft.Json
+namespace BlueBird.Json.TypeAlias
 {
     /// <summary>
     /// Defines an additional alias for deserialization only. The deserialization alias is automatically registered during

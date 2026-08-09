@@ -1,4 +1,5 @@
 using System;
+using BlueBird.Json.TypeAlias;
 using Newtonsoft.Json.Serialization;
 
 namespace BlueBird.Json.TypeAlias.Tests;
@@ -6,42 +7,91 @@ namespace BlueBird.Json.TypeAlias.Tests;
 public sealed class BinderFallbackTest
 {
     [Fact]
-    public void UnregisteredType_FallsBackToDefaultBinder()
+    public void UnregisteredType_DefaultFallbackPreservesTypeIdentity()
     {
         var binder = new TypeAliasRegistry()
             .Register<Dog>()
             .BuildBinder();
+
+        binder.BindToName(typeof(NoAttributeClass), out string? assemblyName, out string? typeName);
+        Type resolvedType = binder.BindToType(assemblyName, typeName!);
+
+        Assert.NotNull(assemblyName);
+        Assert.Equal(typeof(NoAttributeClass), resolvedType);
+    }
+
+    [Fact]
+    public void RegisteredAlias_TakesPrecedenceOverCustomFallback()
+    {
+        var fallbackBinder = new RecordingSerializationBinder(typeof(NoAttributeClass));
+        var binder = new TypeAliasRegistry()
+            .Register<Dog>()
+            .BuildBinder(fallbackBinder);
+
+        binder.BindToName(typeof(Dog), out string? assemblyName, out string? typeName);
+        Type resolvedType = binder.BindToType(null, "dog");
+
+        Assert.Null(assemblyName);
+        Assert.Equal("dog", typeName);
+        Assert.Equal(typeof(Dog), resolvedType);
+        Assert.Equal(0, fallbackBinder.BindToNameCallCount);
+        Assert.Equal(0, fallbackBinder.BindToTypeCallCount);
+    }
+
+    [Fact]
+    public void UnregisteredMapping_DelegatesBothDirectionsToCustomFallback()
+    {
+        var fallbackBinder = new RecordingSerializationBinder(typeof(NoAttributeClass));
+        var binder = new TypeAliasRegistry()
+            .Register<Dog>()
+            .BuildBinder(fallbackBinder);
 
         binder.BindToName(typeof(string), out string? assemblyName, out string? typeName);
+        Type resolvedType = binder.BindToType("input-assembly", "input-type");
 
-        // Falls back to default: assemblyName is not null
-        Assert.NotNull(assemblyName);
-        Assert.Contains("String", typeName);
+        Assert.Equal("fallback-assembly", assemblyName);
+        Assert.Equal("fallback-type", typeName);
+        Assert.Equal(typeof(string), fallbackBinder.LastSerializedType);
+        Assert.Equal(typeof(NoAttributeClass), resolvedType);
+        Assert.Equal("input-assembly", fallbackBinder.LastAssemblyName);
+        Assert.Equal("input-type", fallbackBinder.LastTypeName);
+        Assert.Equal(1, fallbackBinder.BindToNameCallCount);
+        Assert.Equal(1, fallbackBinder.BindToTypeCallCount);
     }
 
-    [Fact]
-    public void UnregisteredAlias_FallsBackToDefaultBinder()
+    private sealed class RecordingSerializationBinder : ISerializationBinder
     {
-        var binder = new TypeAliasRegistry()
-            .Register<Dog>()
-            .BuildBinder();
+        private readonly Type _typeToReturn;
 
-        // Unknown alias with null assemblyName — falls back to default binder
-        // which searches loaded assemblies; returns null if not found
-        Type result = binder.BindToType(null, "unknown-type");
-        Assert.Null(result);
-    }
+        public RecordingSerializationBinder(Type typeToReturn)
+        {
+            this._typeToReturn = typeToReturn;
+        }
 
-    [Fact]
-    public void BindToType_WithNonNullAssemblyName_FallsBackToDefault()
-    {
-        var binder = new TypeAliasRegistry()
-            .Register<Dog>()
-            .BuildBinder();
+        public int BindToNameCallCount { get; private set; }
 
-        // assemblyName != null → skip alias lookup, go to default
-        Type type = binder.BindToType(typeof(Dog).Assembly.FullName, typeof(Dog).FullName!);
+        public int BindToTypeCallCount { get; private set; }
 
-        Assert.Equal(typeof(Dog), type);
+        public Type? LastSerializedType { get; private set; }
+
+        public string? LastAssemblyName { get; private set; }
+
+        public string? LastTypeName { get; private set; }
+
+        public void BindToName(Type serializedType, out string? assemblyName, out string? typeName)
+        {
+            this.BindToNameCallCount++;
+            this.LastSerializedType = serializedType;
+            assemblyName = "fallback-assembly";
+            typeName = "fallback-type";
+        }
+
+        public Type BindToType(string? assemblyName, string typeName)
+        {
+            this.BindToTypeCallCount++;
+            this.LastAssemblyName = assemblyName;
+            this.LastTypeName = typeName;
+            return this._typeToReturn;
+        }
     }
 }

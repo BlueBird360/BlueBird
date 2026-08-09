@@ -1,31 +1,31 @@
 using System;
 using System.Collections.Frozen;
+using Newtonsoft.Json.Serialization;
 
-namespace Newtonsoft.Json.Serialization
+namespace BlueBird.Json.TypeAlias
 {
     /// <summary>
-    /// An immutable <see cref="ISerializationBinder"/> implementation that replaces fully qualified
-    /// type names with short, stable aliases during JSON serialization. This enables correct
-    /// polymorphic deserialization of class hierarchies (preserving concrete derived types),
-    /// reduces JSON payload size, and decouples serialized data from assembly names and type
-    /// namespaces — allowing types to be moved or renamed without breaking deserialization,
-    /// as long as the alias remains unchanged.
+    /// Resolves registered types through immutable aliases and delegates unregistered mappings
+    /// to a fallback <see cref="ISerializationBinder"/>.
     /// </summary>
     /// <remarks>
-    /// This binder is immutable and thread-safe. Create it via <see cref="TypeAliasRegistry.BuildBinder"/>.
+    /// The type-alias mappings are immutable. This binder is thread-safe when its fallback binder is thread-safe.
+    /// Create it via <see cref="TypeAliasRegistry.BuildBinder()"/>.
     /// </remarks>
     public sealed class TypeAliasSerializationBinder : ISerializationBinder
     {
-        private static readonly DefaultSerializationBinder s_fallbackBinder = new();
         private readonly FrozenDictionary<Type, string> _typeToAlias;
         private readonly FrozenDictionary<string, Type> _aliasToType;
+        private readonly ISerializationBinder _fallbackBinder;
 
         internal TypeAliasSerializationBinder(
             FrozenDictionary<Type, string> typeToAlias,
-            FrozenDictionary<string, Type> aliasToType)
+            FrozenDictionary<string, Type> aliasToType,
+            ISerializationBinder fallbackBinder)
         {
-            this._typeToAlias = typeToAlias;
-            this._aliasToType = aliasToType;
+            this._typeToAlias = typeToAlias ?? throw new ArgumentNullException(nameof(typeToAlias));
+            this._aliasToType = aliasToType ?? throw new ArgumentNullException(nameof(aliasToType));
+            this._fallbackBinder = fallbackBinder ?? throw new ArgumentNullException(nameof(fallbackBinder));
         }
 
         /// <inheritdoc />
@@ -38,7 +38,7 @@ namespace Newtonsoft.Json.Serialization
             }
             else
             {
-                s_fallbackBinder.BindToName(serializedType, out assemblyName, out typeName);
+                this._fallbackBinder.BindToName(serializedType, out assemblyName, out typeName);
             }
         }
 
@@ -49,7 +49,7 @@ namespace Newtonsoft.Json.Serialization
             {
                 return type;
             }
-            return s_fallbackBinder.BindToType(assemblyName, typeName);
+            return this._fallbackBinder.BindToType(assemblyName, typeName);
         }
     }
 }

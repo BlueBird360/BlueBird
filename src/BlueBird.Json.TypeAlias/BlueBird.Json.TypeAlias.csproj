@@ -1,35 +1,35 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
-		<Nullable>enable</Nullable>
-		<SignAssembly>true</SignAssembly>
-		<AssemblyOriginatorKeyFile>..\..\BlueBird.snk</AssemblyOriginatorKeyFile>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<DebugType>embedded</DebugType>
-		<Version>1.0.0</Version>
-		<Authors>BlueBird</Authors>
-		<Copyright>Copyright © 2026 BlueBird</Copyright>
-		<IsPackable>true</IsPackable>
-		<PackageIcon>BlueBird.png</PackageIcon>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageReleaseNotes>Initial release.</PackageReleaseNotes>
-		<PackageDescription>Newtonsoft.Json extension that replaces fully qualified type names with short aliases during serialization. Enables correct polymorphic deserialization of class hierarchies, reduces JSON payload size, and allows types to be moved or renamed across assemblies without breaking deserialization.</PackageDescription>
-		<PackageTags>json;newtonsoft;serialization;type-alias;polymorphism;TypeNameHandling;SerializationBinder</PackageTags>
-		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<EnablePackageValidation>true</EnablePackageValidation>
-		<RepositoryType>git</RepositoryType>
-		<RepositoryUrl>https://github.com/BlueBird360/BlueBird</RepositoryUrl>
-		<PackageProjectUrl>https://github.com/BlueBird360/BlueBird</PackageProjectUrl>
-	</PropertyGroup>
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>..\..\BlueBird.snk</AssemblyOriginatorKeyFile>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <DebugType>embedded</DebugType>
+        <Version>1.1.0</Version>
+        <Authors>BlueBird</Authors>
+        <Copyright>Copyright © 2026 BlueBird</Copyright>
+        <IsPackable>true</IsPackable>
+        <PackageIcon>BlueBird.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageReleaseNotes>Move public APIs to the BlueBird.Json.TypeAlias namespace (breaking). Add custom fallback binder support. Reject open generic types and aliases containing commas.</PackageReleaseNotes>
+        <PackageDescription>Newtonsoft.Json extension that replaces fully qualified type names with short aliases during serialization. Enables correct polymorphic deserialization of class hierarchies, reduces JSON payload size, and allows types to be moved or renamed across assemblies without breaking deserialization.</PackageDescription>
+        <PackageTags>json;newtonsoft;serialization;type-alias;polymorphism;TypeNameHandling;SerializationBinder</PackageTags>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <EnablePackageValidation>true</EnablePackageValidation>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/BlueBird360/BlueBird</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/BlueBird360/BlueBird</PackageProjectUrl>
+    </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-	</ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    </ItemGroup>
 
-	<ItemGroup>
-		<None Include="..\..\BlueBird.png" Pack="true" PackagePath="" Visible="false" />
-		<None Include="README.md" Pack="true" PackagePath="" />
-	</ItemGroup>
+    <ItemGroup>
+        <None Include="..\..\BlueBird.png" Pack="true" PackagePath="" Visible="false" />
+        <None Include="README.md" Pack="true" PackagePath="" />
+    </ItemGroup>
 
 </Project>

@@ -2,15 +2,17 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Reflection;
+using Newtonsoft.Json.Serialization;
 
-namespace Newtonsoft.Json.Serialization
+namespace BlueBird.Json.TypeAlias
 {
     /// <summary>
-    /// A mutable registry for collecting type-to-alias mappings during application startup.
-    /// Call <see cref="BuildBinder"/> to produce an immutable <see cref="TypeAliasSerializationBinder"/>.
+    /// Collects type-to-alias mappings during application startup and builds immutable
+    /// <see cref="TypeAliasSerializationBinder"/> instances. Only closed class types can be registered.
     /// </summary>
     public sealed class TypeAliasRegistry
     {
+        private static readonly DefaultSerializationBinder s_defaultFallbackBinder = new();
         private readonly Dictionary<Type, string> _typeToAlias = new();
         private readonly Dictionary<string, Type> _aliasToType = new();
 
@@ -88,7 +90,7 @@ namespace Newtonsoft.Json.Serialization
         /// <item><description><see cref="JsonDeserializationAliasAttribute"/> registers additional aliases used only for deserialization.</description></item>
         /// </list>
         /// A type with only <see cref="JsonDeserializationAliasAttribute"/> does not have a primary alias registered;
-        /// serialization falls back to the default Newtonsoft.Json behavior.
+        /// serialization is delegated to the configured fallback binder.
         /// Types without either attribute are silently skipped.
         /// </summary>
         /// <param name="assembly">The assembly to scan.</param>
@@ -117,8 +119,8 @@ namespace Newtonsoft.Json.Serialization
         /// <summary>
         /// Registers an alias for deserialization only. If the type also has a primary alias
         /// (from <see cref="Register{T}"/>), serialization still uses the primary alias.
-        /// If no primary alias is registered, serialization falls back to the default
-        /// Newtonsoft.Json behavior. This is useful for backward compatibility when
+        /// If no primary alias is registered, serialization is delegated to the configured
+        /// fallback binder. This is useful for backward compatibility when
         /// renaming aliases.
         /// </summary>
         /// <param name="alias">The additional alias for deserialization.</param>
@@ -132,8 +134,8 @@ namespace Newtonsoft.Json.Serialization
         /// <summary>
         /// Registers multiple aliases for deserialization only. If the type also has a primary alias
         /// (from <see cref="Register{T}"/>), serialization still uses the primary alias.
-        /// If no primary alias is registered, serialization falls back to the default
-        /// Newtonsoft.Json behavior. This is useful for backward compatibility when
+        /// If no primary alias is registered, serialization is delegated to the configured
+        /// fallback binder. This is useful for backward compatibility when
         /// renaming aliases.
         /// </summary>
         /// <param name="aliases">The additional aliases for deserialization.</param>
@@ -147,8 +149,8 @@ namespace Newtonsoft.Json.Serialization
         /// <summary>
         /// Registers an alias for deserialization only. If the type also has a primary alias
         /// (from <see cref="Register(Type, string?)"/>), serialization still uses the primary alias.
-        /// If no primary alias is registered, serialization falls back to the default
-        /// Newtonsoft.Json behavior. This is useful for backward compatibility when
+        /// If no primary alias is registered, serialization is delegated to the configured
+        /// fallback binder. This is useful for backward compatibility when
         /// renaming aliases.
         /// </summary>
         /// <param name="type">The type to add an alias for.</param>
@@ -166,8 +168,8 @@ namespace Newtonsoft.Json.Serialization
         /// <summary>
         /// Registers multiple aliases for deserialization only. If the type also has a primary alias
         /// (from <see cref="Register(Type, string?)"/>), serialization still uses the primary alias.
-        /// If no primary alias is registered, serialization falls back to the default
-        /// Newtonsoft.Json behavior. This is useful for backward compatibility when
+        /// If no primary alias is registered, serialization is delegated to the configured
+        /// fallback binder. This is useful for backward compatibility when
         /// renaming aliases.
         /// </summary>
         /// <param name="type">The type to add aliases for.</param>
@@ -186,41 +188,49 @@ namespace Newtonsoft.Json.Serialization
         }
 
         /// <summary>
-        /// Builds an immutable <see cref="TypeAliasSerializationBinder"/> from the
-        /// registered type-alias mappings. After calling this method, the returned binder
-        /// cannot be modified.
+        /// Builds an immutable binder from the current mappings. Unregistered types and type names
+        /// are delegated to <see cref="DefaultSerializationBinder"/>.
         /// </summary>
-        /// <returns>A new <see cref="TypeAliasSerializationBinder"/> instance.</returns>
+        /// <returns>The immutable binder.</returns>
         public TypeAliasSerializationBinder BuildBinder()
         {
+            return this.BuildBinder(s_defaultFallbackBinder);
+        }
+
+        /// <summary>
+        /// Builds an immutable binder from the current mappings. Unregistered types and type names
+        /// are delegated to the specified <paramref name="fallbackBinder"/>.
+        /// </summary>
+        /// <param name="fallbackBinder">The binder used for unregistered types and type names.</param>
+        /// <returns>The immutable binder.</returns>
+        public TypeAliasSerializationBinder BuildBinder(ISerializationBinder fallbackBinder)
+        {
+            ArgumentNullException.ThrowIfNull(fallbackBinder);
+
             return new TypeAliasSerializationBinder(
                 this._typeToAlias.ToFrozenDictionary(),
-                this._aliasToType.ToFrozenDictionary());
+                this._aliasToType.ToFrozenDictionary(),
+                fallbackBinder);
         }
 
         private void RegisterCore(Type type, string alias)
         {
-            if (!type.IsClass)
-                throw new ArgumentException($"Only class types can be registered. \"{type.FullName}\" is not a class.");
+            ValidateType(type);
+            ValidateAlias(type, alias);
 
-            if (string.IsNullOrWhiteSpace(alias))
-                throw new ArgumentException($"The alias for type \"{type.FullName}\" cannot be null or whitespace.");
-
-            if (this._typeToAlias.TryGetValue(type, out string? existAlias))
+            if (this._typeToAlias.TryGetValue(type, out string? existingAlias))
             {
-                if (alias != existAlias)
+                if (alias != existingAlias)
                 {
-                    throw new ArgumentException(
-                        $"Type \"{type.FullName}\" is already registered with alias \"{existAlias}\" and cannot be re-registered with alias \"{alias}\". Use RegisterDeserializationAlias to add additional deserialization aliases.");
+                    throw new ArgumentException($"Type \"{type.FullName}\" is already registered with alias \"{existingAlias}\" and cannot be re-registered with alias \"{alias}\". Use RegisterDeserializationAlias to add additional deserialization aliases.");
                 }
             }
 
-            if (this._aliasToType.TryGetValue(alias, out Type? existType))
+            if (this._aliasToType.TryGetValue(alias, out Type? existingType))
             {
-                if (existType != type)
+                if (existingType != type)
                 {
-                    throw new ArgumentException(
-                        $"Alias \"{alias}\" is already registered by type \"{existType.FullName}\" and cannot be used for type \"{type.FullName}\".");
+                    throw new ArgumentException($"Alias \"{alias}\" is already registered by type \"{existingType.FullName}\" and cannot be used for type \"{type.FullName}\".");
                 }
             }
 
@@ -230,23 +240,37 @@ namespace Newtonsoft.Json.Serialization
 
         private void RegisterDeserializationAliasCore(Type type, string alias)
         {
-            if (!type.IsClass)
-                throw new ArgumentException($"Only class types can be registered. \"{type.FullName}\" is not a class.");
+            ValidateType(type);
+            ValidateAlias(type, alias);
 
-            if (string.IsNullOrWhiteSpace(alias))
-                throw new ArgumentException($"The alias for type \"{type.FullName}\" cannot be null or whitespace.");
-
-            if (this._aliasToType.TryGetValue(alias, out Type? existType))
+            if (this._aliasToType.TryGetValue(alias, out Type? existingType))
             {
-                if (existType != type)
+                if (existingType != type)
                 {
-                    throw new ArgumentException(
-                        $"Alias \"{alias}\" is already registered by type \"{existType.FullName}\" and cannot be used for type \"{type.FullName}\".");
+                    throw new ArgumentException($"Alias \"{alias}\" is already registered by type \"{existingType.FullName}\" and cannot be used for type \"{type.FullName}\".");
                 }
                 return;
             }
 
             this._aliasToType.Add(alias, type);
+        }
+
+        private static void ValidateType(Type type)
+        {
+            if (!type.IsClass)
+                throw new ArgumentException($"Only class types can be registered. \"{type.FullName}\" is not a class.", nameof(type));
+
+            if (type.ContainsGenericParameters)
+                throw new ArgumentException($"Open generic type \"{type}\" cannot be registered. Register a closed constructed type instead.", nameof(type));
+        }
+
+        private static void ValidateAlias(Type type, string alias)
+        {
+            if (string.IsNullOrWhiteSpace(alias))
+                throw new ArgumentException($"The alias for type \"{type.FullName}\" cannot be null, empty, or whitespace.", nameof(alias));
+
+            if (alias.Contains(','))
+                throw new ArgumentException($"The alias for type \"{type.FullName}\" cannot contain a comma.", nameof(alias));
         }
     }
 }

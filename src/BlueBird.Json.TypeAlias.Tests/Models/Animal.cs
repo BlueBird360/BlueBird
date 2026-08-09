@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+using BlueBird.Json.TypeAlias;
 
 namespace BlueBird.Json.TypeAlias.Tests;
 
@@ -20,18 +20,6 @@ public class Cat : Animal
     public bool IsIndoor { get; set; }
 }
 
-[JsonTypeAlias]
-public class NoAliasAnimal : Animal
-{
-    public int Age { get; set; }
-}
-
-[JsonTypeAlias("custom")]
-public class ExplicitAliasClass
-{
-    public int Value { get; set; }
-}
-
 public class NoAttributeClass
 {
     public int Value { get; set; }
@@ -49,13 +37,6 @@ public class Circle : Shape
     public double Radius { get; set; }
 }
 
-[JsonTypeAlias("rect")]
-public class Rectangle : Shape
-{
-    public double Width { get; set; }
-    public double Height { get; set; }
-}
-
 [JsonTypeAlias("bird")]
 [JsonDeserializationAlias("Bird")]
 [JsonDeserializationAlias("old-bird")]
@@ -64,13 +45,7 @@ public class Bird : Animal
     public string Species { get; set; } = string.Empty;
 }
 
-[JsonTypeAlias("same-alias")]
-[JsonDeserializationAlias("same-alias")]
-public class SameAsPrimaryAliasAnimal : Animal
-{
-}
-
-// Only has deserialization alias — no [JsonTypeAlias]
+// Only has deserialization aliases and no primary alias.
 [JsonDeserializationAlias("old-fish")]
 [JsonDeserializationAlias("legacy-fish")]
 public class Fish : Animal

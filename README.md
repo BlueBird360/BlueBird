@@ -37,6 +37,9 @@ dotnet add package BlueBird.Json.TypeAlias
 #### Usage
 
 ```csharp
+using BlueBird.Json.TypeAlias;
+using Newtonsoft.Json;
+
 [JsonTypeAlias("animal")]
 public class Animal
 {

@@ -1,7 +1,6 @@
 using System;
-using Newtonsoft.Json.Serialization;
 
-namespace Newtonsoft.Json
+namespace BlueBird.Json.TypeAlias
 {
     /// <summary>
     /// Defines an alias for a type when used with <see cref="TypeAliasSerializationBinder"/>.
