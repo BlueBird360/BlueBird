@@ -2,10 +2,11 @@
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
   </Folder>
-  <Project Path="src/BlueBird.Http.Logging.Tests/BlueBird.Http.Logging.Tests.csproj" />
   <Project Path="src/BlueBird.Http.Logging/BlueBird.Http.Logging.csproj" />
-  <Project Path="src/BlueBird.Json.TypeAlias.Tests/BlueBird.Json.TypeAlias.Tests.csproj" />
+  <Project Path="tests/BlueBird.Http.Logging.Tests/BlueBird.Http.Logging.Tests.csproj" />
   <Project Path="src/BlueBird.Json.TypeAlias/BlueBird.Json.TypeAlias.csproj" />
-  <Project Path="src/BlueBird.Pinyins.Tests/BlueBird.Pinyins.Tests.csproj" />
+  <Project Path="tests/BlueBird.Json.TypeAlias.Tests/BlueBird.Json.TypeAlias.Tests.csproj" />
   <Project Path="src/BlueBird.Pinyins/BlueBird.Pinyins.csproj" />
+  <Project Path="tests/BlueBird.Pinyins.Tests/BlueBird.Pinyins.Tests.csproj" />
+  <Project Path="tools/BlueBird.Pinyins.IndexGenerator/BlueBird.Pinyins.IndexGenerator.csproj" />
 </Solution>

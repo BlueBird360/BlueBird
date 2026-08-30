@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>net8.0;net10.0</TargetFrameworks>
@@ -7,13 +7,13 @@
 		<AssemblyOriginatorKeyFile>..\..\BlueBird.snk</AssemblyOriginatorKeyFile>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<DebugType>embedded</DebugType>
-		<Version>1.2.0</Version>
+		<Version>1.3.0</Version>
 		<Authors>BlueBird</Authors>
 		<Copyright>Copyright © 2026 BlueBird</Copyright>
 		<IsPackable>true</IsPackable>
 		<PackageIcon>BlueBird.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageReleaseNotes>Chinese character ↔ Pinyin conversion: GetPinyin, GetInitials, GetChineseText.</PackageReleaseNotes>
+		<PackageReleaseNotes>Breaking changes: GetChineseText is renamed to GetCharacters, and GetPinyin(char) is replaced by GetPinyin(Rune). Also adds TryGetPinyin, Unicode-safe text handling, faster character lookup, broader simplified and traditional Chinese character coverage, and improved default Pinyin mappings.</PackageReleaseNotes>
 		<PackageDescription>A zero-dependency .NET library for converting between Chinese characters and Pinyin. Supports Chinese-to-Pinyin, Pinyin-to-Chinese, and initial letter extraction. Compatible with .NET 8.0+ and .NET 10.0.</PackageDescription>
 		<PackageTags>pinyin;chinese;hanzi;汉字;拼音;拼音转换;拼音首字母</PackageTags>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>

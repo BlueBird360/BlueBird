@@ -9,11 +9,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="xunit.v3" Version="3.*" />
+        <PackageReference Include="xunit.v3" Version="4.*" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\BlueBird.Json.TypeAlias\BlueBird.Json.TypeAlias.csproj" />
+        <ProjectReference Include="..\..\src\BlueBird.Json.TypeAlias\BlueBird.Json.TypeAlias.csproj" />
     </ItemGroup>
 
     <ItemGroup>

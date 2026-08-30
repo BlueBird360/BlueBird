@@ -19,7 +19,7 @@ dotnet add package BlueBird.Pinyins
 ```csharp
 Pinyin.GetPinyin("中国");           // "zhongguo"
 Pinyin.GetInitials("你好", "-");    // "n-h"
-Pinyin.GetChineseText("zhong");     // "中种重众钟..."
+Pinyin.GetCharacters("zhong");      // "中种重众钟..."
 ```
 
 See [src/BlueBird.Pinyins/README.md](src/BlueBird.Pinyins/README.md) for details.

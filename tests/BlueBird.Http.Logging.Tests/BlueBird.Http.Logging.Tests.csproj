@@ -18,11 +18,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="xunit.v3" Version="3.*" />
+        <PackageReference Include="xunit.v3" Version="4.*" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\BlueBird.Http.Logging\BlueBird.Http.Logging.csproj" />
+        <ProjectReference Include="..\..\src\BlueBird.Http.Logging\BlueBird.Http.Logging.csproj" />
     </ItemGroup>
 
     <ItemGroup>

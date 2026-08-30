@@ -21,14 +21,24 @@ namespace BlueBird.Pinyins
                 return null;
 
             StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < text.Length; i++)
+            bool hasPreviousRune = false;
+            foreach (Rune rune in text.EnumerateRunes())
             {
-                string pinyin = GetPinyin(text[i]);
-                builder.Append(pinyin);
-                if (separator != null && i != text.Length - 1)
+                if (hasPreviousRune && separator != null)
                 {
                     builder.Append(separator);
                 }
+
+                if (TryGetPinyin(rune, out string? pinyin))
+                {
+                    builder.Append(pinyin);
+                }
+                else
+                {
+                    builder.Append(rune.ToString());
+                }
+
+                hasPreviousRune = true;
             }
             return builder.ToString();
         }
@@ -46,34 +56,47 @@ namespace BlueBird.Pinyins
                 return null;
 
             StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < text.Length; i++)
+            bool hasPreviousRune = false;
+            foreach (Rune rune in text.EnumerateRunes())
             {
-                string pinyin = GetPinyin(text[i]);
-                builder.Append(pinyin[0]);
-                if (separator != null && i != text.Length - 1)
+                if (hasPreviousRune && separator != null)
                 {
                     builder.Append(separator);
                 }
+
+                if (TryGetPinyin(rune, out string? pinyin))
+                {
+                    builder.Append(pinyin[0]);
+                }
+                else
+                {
+                    builder.Append(rune.ToString());
+                }
+
+                hasPreviousRune = true;
             }
             return builder.ToString();
         }
 
         /// <summary>
-        /// Returns the Pinyin for a single Chinese character.
+        /// Returns the Pinyin for a Unicode scalar value.
         /// </summary>
-        /// <param name="ch">Character to convert.</param>
+        /// <param name="character">Character to convert.</param>
         /// <returns>Pinyin for the character. Returns the character itself if not found in the pinyin data table.</returns>
-        public static string GetPinyin(char ch)
+        public static string GetPinyin(Rune character)
         {
-            short bucketIndex = GetBucketIndex(ch);
-            foreach (short index in PinyinIndex.Buckets[bucketIndex])
-            {
-                if (PinyinData.Entries[index].Characters.Contains(ch))
-                {
-                    return PinyinData.Entries[index].Pinyin;
-                }
-            }
-            return ch.ToString();
+            return TryGetPinyin(character, out string? pinyin) ? pinyin : character.ToString();
+        }
+
+        /// <summary>
+        /// Attempts to return the Pinyin for a Unicode scalar value.
+        /// </summary>
+        /// <param name="character">Character to look up.</param>
+        /// <param name="pinyin">When this method returns true, contains the Pinyin for the character.</param>
+        /// <returns>true if the character exists in the pinyin data table; otherwise, false.</returns>
+        public static bool TryGetPinyin(Rune character, [NotNullWhen(true)] out string? pinyin)
+        {
+            return PinyinData.TryGetPinyin(character, out pinyin);
         }
 
         /// <summary>
@@ -82,26 +105,12 @@ namespace BlueBird.Pinyins
         /// <param name="pinyin">Pinyin string to look up.</param>
         /// <returns>Matching Chinese characters. Returns null if input is null; returns empty string if no match is found.</returns>
         [return: NotNullIfNotNull(nameof(pinyin))]
-        public static string? GetChineseText(string? pinyin)
+        public static string? GetCharacters(string? pinyin)
         {
             if (pinyin == null)
                 return null;
 
-            string key = pinyin.Trim().ToLowerInvariant();
-            foreach (var entry in PinyinData.Entries)
-            {
-                if (entry.Pinyin == key)
-                    return entry.Characters;
-            }
-            return string.Empty;
-        }
-
-        /// <summary>
-        /// Gets the bucket index for a character.
-        /// </summary>
-        private static short GetBucketIndex(char ch)
-        {
-            return (short)((uint)ch % PinyinIndex.Buckets.Length);
+            return PinyinData.GetCharacters(pinyin.Trim());
         }
     }
 }
