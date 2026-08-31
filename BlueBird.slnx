@@ -2,6 +2,8 @@
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
   </Folder>
+  <Project Path="src/BlueBird.Aspose.Cells/BlueBird.Aspose.Cells.csproj" />
+  <Project Path="tests/BlueBird.Aspose.Cells.Tests/BlueBird.Aspose.Cells.Tests.csproj" />
   <Project Path="src/BlueBird.Http.Logging/BlueBird.Http.Logging.csproj" />
   <Project Path="tests/BlueBird.Http.Logging.Tests/BlueBird.Http.Logging.Tests.csproj" />
   <Project Path="src/BlueBird.Json.TypeAlias/BlueBird.Json.TypeAlias.csproj" />

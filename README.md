@@ -123,6 +123,42 @@ Request and response content may contain sensitive data. In production, capture 
 
 See [src/BlueBird.Http.Logging/README.md](src/BlueBird.Http.Logging/README.md) for details.
 
+### BlueBird.Aspose.Cells [![NuGet](https://img.shields.io/nuget/v/BlueBird.Aspose.Cells)](https://www.nuget.org/packages/BlueBird.Aspose.Cells)
+
+Lightweight semantic APIs for reading Excel worksheet rows into .NET models and writing model sequences to workbooks through [Aspose.Cells](https://products.aspose.com/cells/net/). `ExcelReader<T>` supports header or index mapping, custom conversion, filtering, and validation. `ExcelWriter<T>` supports typed columns, multi-level headers, styles, merging, comments, data validation, filters, widths, and frozen panes.
+
+#### Install
+
+```bash
+dotnet add package BlueBird.Aspose.Cells
+```
+
+The package depends on `Aspose.Cells`; review Aspose's licensing terms before distributing or deploying applications that use it.
+
+#### Usage
+
+```csharp
+using BlueBird.Aspose.Cells;
+
+public sealed class OrderRow
+{
+    public int Id { get; set; }
+    public string Customer { get; set; } = string.Empty;
+}
+
+var reader = new ExcelReader<OrderRow>();
+reader.Map(row => row.Id, "Order ID");
+reader.Map(row => row.Customer);
+var orders = reader.Read("orders.xlsx");
+
+var writer = new ExcelWriter<OrderRow>();
+writer.AddColumn("Order ID", row => row.Id);
+writer.AddColumn("Customer", row => row.Customer);
+writer.Write(orders, "orders-copy.xlsx");
+```
+
+See [src/BlueBird.Aspose.Cells/README.md](src/BlueBird.Aspose.Cells/README.md), [Reader documentation](src/BlueBird.Aspose.Cells/docs/reader.md), and [Writer documentation](src/BlueBird.Aspose.Cells/docs/writer.md) for details.
+
 ## License
 
 [MIT](LICENSE.txt)
